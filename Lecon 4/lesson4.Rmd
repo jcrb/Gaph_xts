@@ -1,0 +1,61 @@
+---
+title: "leçon 4"
+author: "jcb"
+date: "25 avril 2015"
+output: html_document
+---
+
+```{r}
+path <- "../"
+file <- 'YHOO-stock-prices-19960412-20090702.csv'
+yahoo <- read.csv(paste0(path, file), header=T, sep=',')
+str(yahoo)
+
+# vettoyage des données: col en minuscule et dates tansformées en dates:
+colnames(yahoo) <- tolower( colnames(yahoo) )
+yahoo$date <- as.Date( as.character( yahoo$date ) )
+
+# on ordonne les dates par ordre chronologique => utiliser sur les données SAMU
+yahoo <- yahoo[ order(yahoo$date), ]
+```
+
+Premier graphique simple
+```{r graph1}
+plot(x=yahoo$date, y=yahoo$close, main='Actions YHOO à la fermeture', xlab='date', ylab='cours à la fermeture ($)')
+```
+
+C'est pas très joli, parce q'on affiche trop de données pour être utile. On réduit le nombre de données en ne gardant que celles postérieures au 1er janvier 2008:
+```{r}
+yahoo2 <- yahoo[ yahoo$date >= as.Date('2008-01-01'), ]
+plot(x=yahoo2$date, y=yahoo2$close, main='Actions YHOO à la fermeture', xlab='date', ylab='cours à la fermeture ($)')
+```
+
+Par défaut R fixe les limites du graphe mais on peut imposer ses propres limites:
+```{r}
+plot(x=yahoo2$date, y=yahoo2$close, ylim=c(0,1.1*max(yahoo2$close)),
+  col='black', type='l', main='Actions YHOO à la fermeture', xlab='date', ylab='cours à la fermeture ($)')
+```
+
+On ajoute la moyenne lissée des cours à la fermeture
+```{r}
+# function pour le calcul de la moyenne lissée
+ma30 <- function( x, na.rm=F ){
+  val <- rep( 0, length( x ) )
+  for( j in 1:length( x ) ){
+      val[ j ] <- sum( x[ max( j - 29, 1 ):j ], na.rm=na.rm) / length( max( j-29,1):j )
+  }
+  val
+}
+
+yahoo$close30 <- ma30(yahoo$close)
+yahoo2 <- yahoo[ yahoo$date >= as.Date('2008-01-01'), ]
+```
+
+On redessine
+```{r}
+plot(x=yahoo2$date, y=yahoo2$close, ylim=c(0,1.1*max(yahoo2$close)),
+  col='black', type='l', main='Actions YHOO à la fermeture', xlab='date', ylab='cours à la fermeture ($)')
+points(x=yahoo2$date, y=yahoo2$close30, col='red', type='l', lwd=2)
+```
+
+
